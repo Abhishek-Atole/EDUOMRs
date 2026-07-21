@@ -20,10 +20,10 @@ export class ExamService {
     // Backend stores: totalMarks, marksPerCorrect (per question), marksPerWrong (per question)
     const marksPerCorrect = data.marksPerCorrect || 1;
     let marksPerWrong = 0;
-    
-    // If frontend sends negativeMarksPerQuestion, use it directly as marksPerWrong
+
+    // marksPerWrong is stored as a positive magnitude; the score engine subtracts it.
     if (data.negativeMarking && data.negativeMarksPerQuestion) {
-      marksPerWrong = -Math.abs(data.negativeMarksPerQuestion);
+      marksPerWrong = Math.abs(data.negativeMarksPerQuestion);
     }
     
     return ExamRepository.create(tenantId, {
@@ -54,7 +54,8 @@ export class ExamService {
     if (data.description !== undefined) updateData.description = data.description;
     if (data.totalMarks) updateData.totalMarks = data.totalMarks;
     if (data.marksPerCorrect) updateData.marksPerCorrect = data.marksPerCorrect;
-    if (data.marksPerWrong !== undefined) updateData.marksPerWrong = data.marksPerWrong;
+    if (data.marksPerWrong !== undefined) updateData.marksPerWrong = Math.abs(data.marksPerWrong);
+    if (data.negativeMarksPerQuestion !== undefined) updateData.marksPerWrong = Math.abs(data.negativeMarksPerQuestion);
     if (data.negativeMarking !== undefined) updateData.negativeMarking = data.negativeMarking;
     if (data.durationMinutes) updateData.durationMinutes = data.durationMinutes;
     if (data.scheduledAt !== undefined) updateData.scheduledAt = data.scheduledAt ? new Date(data.scheduledAt) : null;

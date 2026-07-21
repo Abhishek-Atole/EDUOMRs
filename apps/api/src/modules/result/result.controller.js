@@ -43,4 +43,11 @@ export class ResultController {
       res.success(analytics, 200);
     } catch (err) { next(err); }
   }
+
+  static async recalculate(req, res, next) {
+    try {
+      const result = await ResultService.recalculate(req.tenantId, req.params.examId);
+      res.success(result, 200);
+    } catch (err) { next(err); }
+  }
 }

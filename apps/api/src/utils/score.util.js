@@ -1,4 +1,4 @@
-export function calculateScore({ answers, marksPerCorrect, marksPerWrong, negativeMarking }) {
+export function calculateScore({ answers, marksPerCorrect, marksPerWrong, negativeMarking, clampToZero = true }) {
   let totalScore = 0;
   let correctCount = 0;
   let wrongCount = 0;
@@ -11,34 +11,27 @@ export function calculateScore({ answers, marksPerCorrect, marksPerWrong, negati
 
     if (isCorrect === null || isCorrect === undefined) {
       skippedCount += 1;
-      perQuestion.push({
-        isCorrect: null,
-        marksAwarded: 0,
-      });
+      perQuestion.push({ isCorrect: null, marksAwarded: 0 });
     } else if (isCorrect === true) {
       totalScore += Number(marksPerCorrect);
       correctCount += 1;
-      perQuestion.push({
-        isCorrect: true,
-        marksAwarded: Number(marksPerCorrect),
-      });
+      perQuestion.push({ isCorrect: true, marksAwarded: Number(marksPerCorrect) });
     } else {
-      totalScore -= negativeMarking ? Number(marksPerWrong) : 0;
+      const penalty = negativeMarking ? Math.abs(Number(marksPerWrong)) : 0;
+      totalScore -= penalty;
       wrongCount += 1;
-      perQuestion.push({
-        isCorrect: false,
-        marksAwarded: negativeMarking ? -Number(marksPerWrong) : 0,
-      });
+      perQuestion.push({ isCorrect: false, marksAwarded: penalty ? -penalty : 0 });
     }
   }
 
+  const clampedScore = clampToZero ? Math.max(0, totalScore) : totalScore;
   const totalPossibleMarks = Number(marksPerCorrect) * answers.length;
   const percentage = totalPossibleMarks > 0
-    ? Math.round((totalScore / totalPossibleMarks) * 10000) / 100
+    ? Math.round((clampedScore / totalPossibleMarks) * 10000) / 100
     : 0;
 
   return {
-    totalScore: Math.max(0, totalScore),
+    totalScore: clampedScore,
     totalMarks: totalPossibleMarks,
     correctCount,
     wrongCount,
@@ -49,29 +42,38 @@ export function calculateScore({ answers, marksPerCorrect, marksPerWrong, negati
 }
 
 export async function calculateAndStoreResult(prisma, examSession, exam) {
-  const studentAnswers = await prisma.studentAnswer.findMany({
-    where: { examSessionId: examSession.id },
-    include: {
-      question: {
-        select: { id: true, correctOption: true, marks: true },
-      },
-    },
+  // Evaluate against the FULL question set so unanswered questions count as skipped
+  // and the denominator reflects every question, not only the ones the student touched.
+  const questions = await prisma.question.findMany({
+    where: { examId: examSession.examId },
+    select: { id: true, correctOption: true },
+    orderBy: { orderIndex: 'asc' },
   });
 
-  const answers = studentAnswers.map((sa) => ({
-    questionId: sa.questionId,
-    studentAnswer: sa.selectedOption,
-    correctAnswer: sa.question.correctOption,
-    isCorrect: sa.selectedOption
-      ? sa.selectedOption === sa.question.correctOption
-      : null,
-    marks: Number(sa.question.marks),
-  }));
+  // Answer key is the source of truth for correct answers (EI-6); fall back to
+  // the question's stored correctOption if no key exists.
+  const answerKey = await prisma.answerKey.findUnique({ where: { examId: examSession.examId } });
+  const keyEntries = answerKey?.entries || null;
+
+  const studentAnswers = await prisma.studentAnswer.findMany({
+    where: { examSessionId: examSession.id },
+    select: { questionId: true, selectedOption: true },
+  });
+  const answerByQuestion = new Map(studentAnswers.map((sa) => [sa.questionId, sa.selectedOption]));
+
+  const answers = questions.map((q, index) => {
+    const selected = answerByQuestion.get(q.id) ?? null;
+    const correct = keyEntries?.[String(index + 1)] ?? keyEntries?.[q.id] ?? q.correctOption;
+    return {
+      questionId: q.id,
+      studentAnswer: selected,
+      correctAnswer: correct,
+      isCorrect: selected ? selected === correct : null,
+    };
+  });
 
   const scoreResult = calculateScore({
-    answers: answers.map((a) => ({
-      isCorrect: a.isCorrect,
-    })),
+    answers: answers.map((a) => ({ isCorrect: a.isCorrect })),
     marksPerCorrect: Number(exam.marksPerCorrect),
     marksPerWrong: Number(exam.marksPerWrong),
     negativeMarking: exam.negativeMarking,
@@ -101,55 +103,43 @@ export async function calculateAndStoreResult(prisma, examSession, exam) {
     },
   });
 
-  await prisma.questionResult.deleteMany({
-    where: { resultId: result.id },
-  });
+  await prisma.questionResult.deleteMany({ where: { resultId: result.id } });
 
-  const questionResultsData = [];
-  for (let i = 0; i < answers.length; i++) {
-    const answer = answers[i];
-    questionResultsData.push({
-      tenantId: examSession.tenantId,
-      resultId: result.id,
-      questionId: answer.questionId,
-      studentAnswer: answer.studentAnswer,
-      correctAnswer: answer.correctAnswer,
-      isCorrect: answer.isCorrect === true,
-      marksAwarded: scoreResult.perQuestion[i].marksAwarded,
-    });
-  }
+  const questionResultsData = answers.map((answer, i) => ({
+    tenantId: examSession.tenantId,
+    resultId: result.id,
+    questionId: answer.questionId,
+    studentAnswer: answer.studentAnswer,
+    correctAnswer: answer.correctAnswer,
+    isCorrect: answer.isCorrect === true,
+    marksAwarded: scoreResult.perQuestion[i].marksAwarded,
+  }));
 
   if (questionResultsData.length > 0) {
-    await prisma.questionResult.createMany({
-      data: questionResultsData,
-    });
+    await prisma.questionResult.createMany({ data: questionResultsData });
   }
 
+  await recomputeRanks(prisma, examSession.examId);
+
+  return result;
+}
+
+export async function recomputeRanks(prisma, examId) {
   const allResults = await prisma.result.findMany({
-    where: { examId: examSession.examId },
+    where: { examId },
     orderBy: { percentage: 'desc' },
     select: { id: true, percentage: true },
   });
 
   let currentRank = 1;
-  const rankUpdates = [];
   for (let i = 0; i < allResults.length; i++) {
-    if (i > 0 && allResults[i].percentage < allResults[i - 1].percentage) {
+    // percentage is a Prisma Decimal — compare numerically, not lexicographically.
+    if (i > 0 && Number(allResults[i].percentage) < Number(allResults[i - 1].percentage)) {
       currentRank = i + 1;
     }
-    rankUpdates.push({
-      id: allResults[i].id,
-      rank: currentRank,
-      totalStudents: allResults.length,
-    });
-  }
-
-  for (const update of rankUpdates) {
     await prisma.result.update({
-      where: { id: update.id },
-      data: { rank: update.rank, totalStudents: update.totalStudents },
+      where: { id: allResults[i].id },
+      data: { rank: currentRank, totalStudents: allResults.length },
     });
   }
-
-  return result;
 }
