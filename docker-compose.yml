@@ -1,0 +1,78 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: eduomr
+      POSTGRES_USER: eduomr
+      POSTGRES_PASSWORD: eduomr_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U eduomr"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      API_VERSION: v1
+      DATABASE_URL: postgresql://eduomr:eduomr_pass@postgres:5432/eduomr
+      DATABASE_POOL_MIN: 2
+      DATABASE_POOL_MAX: 10
+      REDIS_URL: redis://redis:6379
+      REDIS_PREFIX: "eduomr:"
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_ACCESS_EXPIRY_SECONDS: 900
+      JWT_REFRESH_EXPIRY_SECONDS: 604800
+      CORS_ORIGIN: http://localhost:8080
+      META_APP_ID: ${META_APP_ID:-}
+      META_APP_SECRET: ${META_APP_SECRET:-}
+      META_PHONE_NUMBER_ID: ${META_PHONE_NUMBER_ID:-}
+      META_WEBHOOK_TOKEN: ${META_WEBHOOK_TOKEN:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      FROM_EMAIL: noreply@eduomr.com
+      FROM_NAME: EduOMR
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - api
+
+volumes:
+  postgres_data:
+  redis_data:

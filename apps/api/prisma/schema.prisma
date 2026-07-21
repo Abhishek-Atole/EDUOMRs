@@ -1,0 +1,455 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Institution {
+  id            String   @id @default(uuid()) @db.Uuid
+  name          String   @db.VarChar(255)
+  address       String?  @db.Text
+  contactEmail  String?  @map("contact_email") @db.VarChar(255)
+  contactPhone  String?  @map("contact_phone") @db.VarChar(20)
+  status        String   @default("pending") @db.VarChar(20)
+  settings      Json?    @default("{}")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  users              User[]
+  subscriptions      Subscription[]
+  paymentUploads     PaymentUpload[]
+  academicYears      AcademicYear[]
+  classes            Class[]
+  sections           Section[]
+  subjects           Subject[]
+  enrollments        Enrollment[]
+  exams              Exam[]
+  answerKeys         AnswerKey[]
+  examSessions       ExamSession[]
+  results            Result[]
+  notificationLogs   NotificationLog[]
+  auditLogs          AuditLog[]
+  parentStudents     ParentStudent[]
+
+  @@map("institutions")
+}
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  email         String   @db.VarChar(255)
+  passwordHash  String   @map("password_hash") @db.VarChar(255)
+  firstName     String   @map("first_name") @db.VarChar(100)
+  lastName      String?  @map("last_name") @db.VarChar(100)
+  phone         String?  @db.VarChar(20)
+  role          String   @db.VarChar(20)
+  isActive      Boolean  @default(true) @map("is_active")
+  failedAttempts Int     @default(0) @map("failed_attempts")
+  lockedUntil   DateTime? @map("locked_until")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  deletedAt     DateTime? @map("deleted_at")
+
+  tenant              Institution        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentStudents      ParentStudent[]    @relation("ParentLink")
+  studentEnrollments  ParentStudent[]    @relation("StudentLink")
+  createdExams        Exam[]             @relation("ExamCreator")
+  examSessions        ExamSession[]
+  results             Result[]
+  studentNotificationLogs NotificationLog[] @relation("NotificationStudent")
+  parentNotificationLogs  NotificationLog[] @relation("NotificationParent")
+  refreshTokens       RefreshToken[]
+  passwordResetTokens PasswordResetToken[]
+  auditLogs           AuditLog[]
+  verifiedPayments    PaymentUpload[]    @relation("PaymentVerifier")
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model ParentStudent {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  parentId  String   @map("parent_id") @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant  Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent  User        @relation("ParentLink", fields: [parentId], references: [id], onDelete: Cascade)
+  student User        @relation("StudentLink", fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, studentId])
+  @@map("parent_students")
+}
+
+model SubscriptionPlan {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(100)
+  price        Decimal  @db.Decimal(10, 2)
+  durationDays Int      @map("duration_days")
+  maxStudents  Int      @map("max_students")
+  features     Json?    @default("[]")
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  paymentUploads PaymentUpload[]
+  subscriptions  Subscription[]
+
+  @@map("subscription_plans")
+}
+
+model Subscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  planId    String   @map("plan_id") @db.Uuid
+  startDate DateTime @map("start_date")
+  endDate   DateTime @map("end_date")
+  status    String   @default("active") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant    Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan      SubscriptionPlan @relation(fields: [planId], references: [id])
+
+  @@map("subscriptions")
+}
+
+model PaymentUpload {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  planId         String   @map("plan_id") @db.Uuid
+  utrNumber      String   @map("utr_number") @db.VarChar(22)
+  amount         Decimal  @db.Decimal(10, 2)
+  screenshotUrl  String?  @map("screenshot_url") @db.VarChar(500)
+  status         String   @default("pending") @db.VarChar(20)
+  verifiedById   String?  @map("verified_by") @db.Uuid
+  rejectionReason String? @map("rejection_reason") @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  tenant   Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+  verifiedBy User?     @relation("PaymentVerifier", fields: [verifiedById], references: [id])
+
+  @@unique([utrNumber])
+  @@map("payment_uploads")
+}
+
+model AcademicYear {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  startDate DateTime @map("start_date") @db.Date
+  endDate   DateTime @map("end_date") @db.Date
+  isCurrent Boolean  @default(false) @map("is_current")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant      Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  classes     Class[]
+  enrollments Enrollment[]
+
+  @@unique([tenantId, name])
+  @@map("academic_years")
+}
+
+model Class {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  name           String   @db.VarChar(100)
+  academicYearId String?  @map("academic_year_id") @db.Uuid
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  tenant       Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id])
+  sections     Section[]
+  subjects     Subject[]
+  enrollments  Enrollment[]
+  exams        Exam[]
+
+  @@unique([tenantId, name, academicYearId])
+  @@map("classes")
+}
+
+model Section {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  classId    String   @map("class_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant    Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  class     Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  enrollments Enrollment[]
+
+  @@unique([tenantId, classId, name])
+  @@map("sections")
+}
+
+model Subject {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  classId    String   @map("class_id") @db.Uuid
+  name      String   @db.VarChar(100)
+  code      String?  @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  tenant Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  class  Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  exams  Exam[]
+
+  @@unique([tenantId, classId, name])
+  @@map("subjects")
+}
+
+model Enrollment {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  studentId     String   @map("student_id") @db.Uuid
+  classId        String   @map("class_id") @db.Uuid
+  sectionId     String?  @map("section_id") @db.Uuid
+  academicYearId String? @map("academic_year_id") @db.Uuid
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant       Institution  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  class        Class        @relation(fields: [classId], references: [id], onDelete: Cascade)
+  section      Section?     @relation(fields: [sectionId], references: [id])
+  academicYear AcademicYear? @relation(fields: [academicYearId], references: [id])
+
+  @@unique([studentId, classId, academicYearId])
+  @@map("enrollments")
+}
+
+model Exam {
+  id                String   @id @default(uuid()) @db.Uuid
+  tenantId          String   @map("tenant_id") @db.Uuid
+  title             String   @db.VarChar(255)
+  description       String?  @db.Text
+  examMode          String   @map("exam_mode") @db.VarChar(20)
+  totalMarks        Int      @map("total_marks")
+  marksPerCorrect   Decimal  @default(1.00) @map("marks_per_correct") @db.Decimal(5, 2)
+  marksPerWrong     Decimal  @default(0.00) @map("marks_per_wrong") @db.Decimal(5, 2)
+  negativeMarking   Boolean  @default(false) @map("negative_marking")
+  durationMinutes   Int      @map("duration_minutes")
+  status            String   @default("draft") @db.VarChar(20)
+  scheduledAt       DateTime? @map("scheduled_at")
+  deadlineAt        DateTime? @map("deadline_at")
+  classId            String?  @map("class_id") @db.Uuid
+  subjectId         String?  @map("subject_id") @db.Uuid
+  createdBy         String?  @map("created_by") @db.Uuid
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
+
+  tenant          Institution     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  class           Class?          @relation(fields: [classId], references: [id])
+  subject         Subject?        @relation(fields: [subjectId], references: [id])
+  creator         User?           @relation("ExamCreator", fields: [createdBy], references: [id])
+  questions       Question[]
+  answerKey       AnswerKey?
+  examSessions    ExamSession[]
+  results         Result[]
+  notificationLogs NotificationLog[]
+
+  @@map("exams")
+}
+
+model Question {
+  id            String   @id @default(uuid()) @db.Uuid
+  tenantId      String   @map("tenant_id") @db.Uuid
+  examId        String   @map("exam_id") @db.Uuid
+  questionText  String   @map("question_text") @db.Text
+  options       Json
+  correctOption String   @map("correct_option") @db.VarChar(1)
+  marks         Decimal  @default(1.00) @db.Decimal(5, 2)
+  orderIndex    Int      @map("order_index")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  exam          Exam             @relation(fields: [examId], references: [id], onDelete: Cascade)
+  studentAnswers StudentAnswer[]
+  questionResults QuestionResult[]
+
+  @@unique([examId, orderIndex])
+  @@map("questions")
+}
+
+model AnswerKey {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  examId    String   @map("exam_id") @db.Uuid
+  entries   Json
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  exam   Exam        @relation(fields: [examId], references: [id], onDelete: Cascade)
+
+  @@unique([examId])
+  @@map("answer_keys")
+}
+
+model ExamSession {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @map("tenant_id") @db.Uuid
+  examId      String    @map("exam_id") @db.Uuid
+  studentId   String    @map("student_id") @db.Uuid
+  status      String    @default("in_progress") @db.VarChar(20)
+  startedAt   DateTime  @default(now()) @map("started_at")
+  submittedAt DateTime? @map("submitted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tenant         Institution    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  exam           Exam           @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student        User           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentAnswers StudentAnswer[]
+  result         Result?
+
+  @@unique([examId, studentId])
+  @@map("exam_sessions")
+}
+
+model StudentAnswer {
+  id             String    @id @default(uuid()) @db.Uuid
+  tenantId       String    @map("tenant_id") @db.Uuid
+  examSessionId  String    @map("exam_session_id") @db.Uuid
+  questionId     String    @map("question_id") @db.Uuid
+  selectedOption String?   @map("selected_option") @db.VarChar(1)
+  isSaved        Boolean   @default(true) @map("is_saved")
+  savedAt        DateTime  @default(now()) @map("saved_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  examSession ExamSession @relation(fields: [examSessionId], references: [id], onDelete: Cascade)
+  question    Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([examSessionId, questionId])
+  @@map("student_answers")
+}
+
+model Result {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  examSessionId String    @unique @map("exam_session_id") @db.Uuid
+  examId        String    @map("exam_id") @db.Uuid
+  studentId     String    @map("student_id") @db.Uuid
+  totalScore    Decimal   @default(0) @map("total_score") @db.Decimal(10, 2)
+  totalMarks    Decimal   @map("total_marks") @db.Decimal(10, 2)
+  correctCount  Int       @default(0) @map("correct_count")
+  wrongCount    Int       @default(0) @map("wrong_count")
+  skippedCount  Int       @default(0) @map("skipped_count")
+  percentage    Decimal   @default(0) @db.Decimal(5, 2)
+  rank          Int?
+  totalStudents Int?      @map("total_students")
+  isReleased    Boolean   @default(false) @map("is_released")
+  releasedAt    DateTime? @map("released_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant       Institution     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  examSession  ExamSession     @relation(fields: [examSessionId], references: [id], onDelete: Cascade)
+  exam         Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student      User            @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  questionResults QuestionResult[]
+
+  @@map("results")
+}
+
+model QuestionResult {
+  id             String   @id @default(uuid()) @db.Uuid
+  tenantId       String   @map("tenant_id") @db.Uuid
+  resultId       String   @map("result_id") @db.Uuid
+  questionId     String   @map("question_id") @db.Uuid
+  studentAnswer  String?  @map("student_answer") @db.VarChar(1)
+  correctAnswer  String   @map("correct_answer") @db.VarChar(1)
+  isCorrect      Boolean  @default(false) @map("is_correct")
+  marksAwarded   Decimal  @default(0) @map("marks_awarded") @db.Decimal(5, 2)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  result   Result   @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  question Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@unique([resultId, questionId])
+  @@map("question_results")
+}
+
+model NotificationLog {
+  id            String    @id @default(uuid()) @db.Uuid
+  tenantId      String    @map("tenant_id") @db.Uuid
+  examId        String?   @map("exam_id") @db.Uuid
+  studentId     String?   @map("student_id") @db.Uuid
+  parentId      String?   @map("parent_id") @db.Uuid
+  channel       String    @db.VarChar(20)
+  status        String    @db.VarChar(20)
+  message       String?   @db.Text
+  errorMessage  String?   @map("error_message") @db.Text
+  attemptNumber Int       @default(1) @map("attempt_number")
+  maxRetries    Int       @default(3) @map("max_retries")
+  sentAt        DateTime? @map("sent_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant  Institution @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  exam    Exam?       @relation(fields: [examId], references: [id])
+  student User?       @relation("NotificationStudent", fields: [studentId], references: [id])
+  parent  User?       @relation("NotificationParent", fields: [parentId], references: [id])
+
+  @@map("notification_logs")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  tokenHash String    @map("token_hash") @db.VarChar(255)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String?  @map("tenant_id") @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  action       String   @db.VarChar(50)
+  resourceType String   @map("resource_type") @db.VarChar(50)
+  resourceId   String?  @map("resource_id") @db.Uuid
+  details      Json?
+  ipAddress    String?  @map("ip_address")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenant Institution? @relation(fields: [tenantId], references: [id])
+  user   User?        @relation(fields: [userId], references: [id])
+
+  @@map("audit_logs")
+}
