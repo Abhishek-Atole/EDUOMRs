@@ -14,6 +14,8 @@ export default [
         clearTimeout: 'readonly',
         clearInterval: 'readonly',
         Buffer: 'readonly',
+        fetch: 'readonly',
+        AbortSignal: 'readonly',
         // Jest globals for tests
         describe: 'readonly',
         test: 'readonly',

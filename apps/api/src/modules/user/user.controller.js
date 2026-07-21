@@ -18,7 +18,7 @@ export class UserController {
   static async changePassword(req, res, next) {
     try {
       const result = await UserService.changePassword(req.user.id, req.body.currentPassword, req.body.newPassword);
-      return successResponse(req, res, result);
+      res.success(result, 200);
     } catch (err) {
       next(err);
     }

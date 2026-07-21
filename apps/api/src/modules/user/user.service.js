@@ -1,7 +1,7 @@
 import bcrypt from 'bcrypt';
 import { env } from '../../config/env.js';
 import { UserRepository } from './user.repository.js';
-import { NotFoundError, BadRequestError, AuthenticationError } from '../../types/errors.js';
+import { NotFoundError, AuthenticationError } from '../../types/errors.js';
 
 export class UserService {
   static async getProfile(userId) {
