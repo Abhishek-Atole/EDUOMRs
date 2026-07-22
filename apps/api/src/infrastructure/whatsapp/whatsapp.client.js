@@ -8,7 +8,7 @@ export async function sendWhatsAppMessage(to, templateName, parameters) {
     const response = await fetch(`${BASE_URL}/messages`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${env.META_APP_SECRET}`,
+        Authorization: `Bearer ${env.META_ACCESS_TOKEN}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
