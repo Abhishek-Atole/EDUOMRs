@@ -98,7 +98,7 @@ describe('Auth Module Integration', () => {
         email: 'admin@alpha.edu',
         passwordHash: hashedPassword,
         isActive: true,
-        role: 'admin',
+        role: 'institution_admin',
         tenantId: 'inst-uuid',
         firstName: 'John',
         lastName: 'Doe',
@@ -113,7 +113,7 @@ describe('Auth Module Integration', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.data.accessToken).toBeDefined();
       expect(res.body.data.refreshToken).toBeDefined();
-      expect(res.body.data.user.role).toBe('admin');
+      expect(res.body.data.user.role).toBe('institution_admin');
       expect(prisma.refreshToken.create).toHaveBeenCalled();
     });
 
@@ -124,7 +124,7 @@ describe('Auth Module Integration', () => {
         email: 'admin@alpha.edu',
         passwordHash: hashedPassword,
         isActive: true,
-        role: 'admin',
+        role: 'institution_admin',
         tenantId: 'inst-uuid',
         tenant: { status: 'pending' },
       });
@@ -173,7 +173,7 @@ describe('Auth Module Integration', () => {
       prisma.user.findUnique.mockResolvedValue({
         id: 'user-uuid',
         email: 'admin@alpha.edu',
-        role: 'admin',
+        role: 'institution_admin',
         tenantId: 'inst-uuid',
         isActive: true,
       });

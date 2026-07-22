@@ -33,7 +33,7 @@ describe('Phase C — Institution + Subscription', () => {
 
   describe('Institution CRUD', () => {
     const adminToken = generateToken({ role: 'super_admin' });
-    const userToken = generateToken({ role: 'admin', tenantId: 'inst-uuid' });
+    const userToken = generateToken({ role: 'institution_admin', tenantId: 'inst-uuid' });
 
     it('GET /api/v1/institutions — lists institutions (super admin)', async () => {
       prisma.institution.findMany.mockResolvedValue([{ id: 'inst-1', name: 'Test', status: 'active' }]);
@@ -126,7 +126,7 @@ describe('Phase C — Institution + Subscription', () => {
   });
 
   describe('Payment Upload & Verification', () => {
-    const adminToken = generateToken({ role: 'admin', tenantId: 'inst-uuid' });
+    const adminToken = generateToken({ role: 'institution_admin', tenantId: 'inst-uuid' });
     const superAdminToken = generateToken({ role: 'super_admin' });
 
     it('POST /api/v1/payments/upload — admin uploads payment', async () => {
@@ -171,7 +171,7 @@ describe('Phase C — Institution + Subscription', () => {
   });
 
   describe('Subscription Status', () => {
-    const adminToken = generateToken({ role: 'admin', tenantId: 'inst-uuid' });
+    const adminToken = generateToken({ role: 'institution_admin', tenantId: 'inst-uuid' });
 
     it('GET /api/v1/subscriptions — returns active subscription', async () => {
       prisma.subscription.findFirst.mockResolvedValue({

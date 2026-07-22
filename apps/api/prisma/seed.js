@@ -55,7 +55,7 @@ async function main() {
     data: { tenantId: alpha.id, planId: enterprisePlan.id, startDate: now, endDate: new Date(now.getTime() + 365 * 86400000), status: 'active' },
   });
 
-  const aAdmin = await prisma.user.create({ data: { tenantId: alpha.id, email: 'admin@alpha.edu', passwordHash, firstName: 'Alpha', lastName: 'Admin', role: 'admin', isActive: true } });
+  const aAdmin = await prisma.user.create({ data: { tenantId: alpha.id, email: 'admin@alpha.edu', passwordHash, firstName: 'Alpha', lastName: 'Admin', role: 'institution_admin', isActive: true } });
   const aTeacher = await prisma.user.create({ data: { tenantId: alpha.id, email: 'teacher@alpha.edu', passwordHash, firstName: 'John', lastName: 'Teacher', role: 'teacher', isActive: true } });
   const aTeacher2 = await prisma.user.create({ data: { tenantId: alpha.id, email: 'sarah@alpha.edu', passwordHash, firstName: 'Sarah', lastName: 'Conner', role: 'teacher', isActive: true } });
   const aStudent = await prisma.user.create({ data: { tenantId: alpha.id, email: 'student@alpha.edu', passwordHash, firstName: 'Jimmy', lastName: 'Student', role: 'student', isActive: true } });
@@ -107,7 +107,7 @@ async function main() {
     data: { tenantId: beta.id, planId: proPlan.id, startDate: now, endDate: new Date(now.getTime() + 365 * 86400000), status: 'active' },
   });
 
-  const bAdmin = await prisma.user.create({ data: { tenantId: beta.id, email: 'admin@beta.edu', passwordHash, firstName: 'Beta', lastName: 'Admin', role: 'admin', isActive: true } });
+  const bAdmin = await prisma.user.create({ data: { tenantId: beta.id, email: 'admin@beta.edu', passwordHash, firstName: 'Beta', lastName: 'Admin', role: 'institution_admin', isActive: true } });
   const bTeacher = await prisma.user.create({ data: { tenantId: beta.id, email: 'teacher@beta.edu', passwordHash, firstName: 'Mike', lastName: 'Teacher', role: 'teacher', isActive: true } });
   const bStudent = await prisma.user.create({ data: { tenantId: beta.id, email: 'student@beta.edu', passwordHash, firstName: 'Emma', lastName: 'Student', role: 'student', isActive: true } });
   const bParent = await prisma.user.create({ data: { tenantId: beta.id, email: 'parent@beta.edu', passwordHash, firstName: 'David', lastName: 'Parent', role: 'parent', isActive: true } });

@@ -48,7 +48,7 @@ export async function seedTenant(tenantName) {
       email: `admin@${tenantName?.toLowerCase().replace(/\s+/g, '') || 'e2e-tenant'}.eduomr.e2e`,
       passwordHash: hash,
       firstName: 'Admin',
-      role: 'admin',
+      role: 'institution_admin',
       isActive: true,
     },
   });

@@ -51,7 +51,7 @@ describe('E2E: Auth Flow', () => {
     expect(res.body.success).toBe(true);
     expect(res.body.data.accessToken).toBeDefined();
     expect(res.body.data.refreshToken).toBeDefined();
-    expect(res.body.data.user.role).toBe('admin');
+    expect(res.body.data.user.role).toBe('institution_admin');
     tenant.accessToken = res.body.data.accessToken;
     tenant.refreshToken = res.body.data.refreshToken;
   });

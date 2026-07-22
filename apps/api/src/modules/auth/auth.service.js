@@ -83,7 +83,7 @@ export class AuthService {
 
     // Access policy: super_admin/platform_owner bypass, admin can log in to pending/active, others must be active
     const tenantStatus = user.tenant?.status;
-    if (!['super_admin', 'platform_owner'].includes(user.role) && user.role !== 'admin' && tenantStatus !== 'active') {
+    if (!['super_admin', 'platform_owner'].includes(user.role) && user.role !== 'institution_admin' && tenantStatus !== 'active') {
       throw new ForbiddenError('Your institution subscription is inactive or pending activation');
     }
 
@@ -176,7 +176,7 @@ export class AuthService {
 
     await AuthRepository.createPasswordResetToken({ userId: user.id, tokenHash, expiresAt });
 
-    const resetUrl = `${env.FRONTEND_URL || 'http://localhost:8080'}/reset-password?token=${rawToken}`;
+    const resetUrl = `${env.FRONTEND_URL}/reset-password?token=${rawToken}`;
     await sendEmail(
       user.email,
       'EduOMR — Password Reset Request',

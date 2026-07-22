@@ -12,7 +12,7 @@ export class InstitutionService {
   static async getById(id, requestingUser) {
     // An institution admin may only read their own institution; platform-level
     // admins (super_admin / platform_owner) may read any (MT-4 admin service).
-    if (requestingUser.role === 'admin' && requestingUser.tenantId !== id) {
+    if (requestingUser.role === 'institution_admin' && requestingUser.tenantId !== id) {
       throw new NotFoundError('Institution');
     }
 

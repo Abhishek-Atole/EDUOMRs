@@ -1,7 +1,7 @@
 export const UserRole = Object.freeze({
   PLATFORM_OWNER: 'platform_owner',
   SUPER_ADMIN: 'super_admin',
-  ADMIN: 'admin',
+  ADMIN: 'institution_admin',
   TEACHER: 'teacher',
   STUDENT: 'student',
   PARENT: 'parent',

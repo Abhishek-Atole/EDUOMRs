@@ -31,7 +31,7 @@ export class AuthRepository {
           firstName: adminFirstName,
           lastName: adminLastName,
           phone: contactPhone,
-          role: 'admin',
+          role: 'institution_admin',
           isActive: true,
         },
       });
