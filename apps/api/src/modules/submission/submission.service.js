@@ -50,6 +50,21 @@ export class SubmissionService {
 
     const prisma = getPrisma();
     const exam = await prisma.exam.findFirst({ where: { id: session.examId, tenantId } });
+    if (!exam) throw new NotFoundError('Exam not found');
+
+    if (exam.deadlineAt && new Date() > exam.deadlineAt) {
+      await ExamSessionRepository.update(tenantId, examSessionId, { status: 'expired' });
+      throw new ExamExpiredError('Exam deadline has passed');
+    }
+
+    // Also reject if the student started more than durationMinutes ago (EI-3).
+    if (exam.durationMinutes) {
+      const durationMs = exam.durationMinutes * 60 * 1000;
+      if (Date.now() - new Date(session.startedAt).getTime() > durationMs) {
+        await ExamSessionRepository.update(tenantId, examSessionId, { status: 'expired' });
+        throw new ExamExpiredError('Exam time limit has been exceeded');
+      }
+    }
 
     await ExamSessionRepository.update(tenantId, examSessionId, {
       status: 'submitted',

@@ -1,6 +1,7 @@
 import { ExamRepository } from './exam.repository.js';
 import { getPrisma } from '../../infrastructure/database/prisma.js';
 import { NotFoundError, ValidationError } from '../../types/errors.js';
+import { scheduleAutoSubmit } from '../../jobs/auto-submit.worker.js';
 
 export class ExamService {
   static async list(tenantId, page = 1, limit = 10) {
@@ -95,6 +96,14 @@ export class ExamService {
     if (scheduleData.scheduledAt) updateData.scheduledAt = new Date(scheduleData.scheduledAt);
     if (scheduleData.deadlineAt) updateData.deadlineAt = new Date(scheduleData.deadlineAt);
 
-    return ExamRepository.update(tenantId, id, updateData);
+    const published = await ExamRepository.update(tenantId, id, updateData);
+
+    // Schedule auto-submit at the deadline so in-progress sessions are force-closed (EI-3).
+    const effectiveDeadline = updateData.deadlineAt || exam.deadlineAt;
+    if (effectiveDeadline) {
+      await scheduleAutoSubmit(id, effectiveDeadline);
+    }
+
+    return published;
   }
 }

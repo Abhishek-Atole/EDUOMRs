@@ -52,6 +52,7 @@ export class ExamSessionService {
     const exam = await prisma.exam.findFirst({ where: { id: examId, tenantId, deletedAt: null },
       select: { id: true, title: true, examMode: true, durationMinutes: true, scheduledAt: true, deadlineAt: true, status: true, marksPerCorrect: true, marksPerWrong: true, negativeMarking: true, totalMarks: true },
     });
+    if (!exam) throw new NotFoundError('Exam not found');
 
     const existingAnswers = await prisma.studentAnswer.findMany({
       where: { examSessionId: session.id },
