@@ -25,6 +25,7 @@ const envSchema = z.object({
 
   META_APP_ID: z.string().optional(),
   META_APP_SECRET: z.string().optional(),
+  META_ACCESS_TOKEN: z.string().optional(),
   META_PHONE_NUMBER_ID: z.string().optional(),
   META_WEBHOOK_TOKEN: z.string().optional(),
   META_API_VERSION: z.string().default('v18.0'),
@@ -40,6 +41,7 @@ const envSchema = z.object({
   BULL_REDIS_URL: z.string().optional(),
 
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  FRONTEND_URL: z.string().url().default('http://localhost:8080'),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(60000),
   RATE_LIMIT_MAX_REQUESTS: z.coerce.number().int().positive().default(1000),

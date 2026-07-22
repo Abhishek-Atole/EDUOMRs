@@ -19,7 +19,7 @@ function generateToken(overrides = {}) {
   return jwt.sign(
     { sub: overrides.userId || 'user-uuid', role: overrides.role || 'super_admin', tenantId: overrides.tenantId || null },
     process.env.JWT_SECRET || 'test-secret-that-is-at-least-32-characters-long!',
-    { expiresIn: '15m' }
+    { algorithm: 'HS256', expiresIn: '15m', issuer: 'eduomr' }
   );
 }
 

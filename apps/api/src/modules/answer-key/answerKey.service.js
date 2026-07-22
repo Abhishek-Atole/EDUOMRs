@@ -22,6 +22,10 @@ export class AnswerKeyService {
   }
 
   static async delete(tenantId, examId) {
+    const prisma = getPrisma();
+    const exam = await prisma.exam.findFirst({ where: { id: examId, tenantId, deletedAt: null } });
+    if (!exam) throw new NotFoundError('Exam not found');
+
     const key = await AnswerKeyRepository.findByExam(tenantId, examId);
     if (!key) throw new NotFoundError('Answer key not found');
 

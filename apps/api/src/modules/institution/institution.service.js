@@ -9,7 +9,13 @@ export class InstitutionService {
     return { data, pagination: formatPaginationMeta(total, page, limit) };
   }
 
-  static async getById(id) {
+  static async getById(id, requestingUser) {
+    // An institution admin may only read their own institution; platform-level
+    // admins (super_admin / platform_owner) may read any (MT-4 admin service).
+    if (requestingUser.role === 'admin' && requestingUser.tenantId !== id) {
+      throw new NotFoundError('Institution');
+    }
+
     const institution = await InstitutionRepository.findById(id);
     if (!institution) throw new NotFoundError('Institution');
     return institution;

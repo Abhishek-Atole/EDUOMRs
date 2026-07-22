@@ -30,3 +30,9 @@ export const PERMISSIONS = Object.freeze({
   VIEW_ANALYTICS: [ROLES.PLATFORM_OWNER, ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER],
   VIEW_CHILD_RESULTS: [ROLES.PARENT],
 });
+
+// Role groups for exact-match route authorization. Because authorize() no longer
+// grants access by hierarchy level, every route must name every role that may use it.
+export const PLATFORM_ADMINS = [ROLES.PLATFORM_OWNER, ROLES.SUPER_ADMIN];
+export const TENANT_ADMINS = [ROLES.PLATFORM_OWNER, ROLES.SUPER_ADMIN, ROLES.ADMIN];
+export const EXAM_MANAGERS = [ROLES.PLATFORM_OWNER, ROLES.SUPER_ADMIN, ROLES.ADMIN, ROLES.TEACHER];

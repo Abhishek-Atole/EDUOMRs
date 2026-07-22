@@ -17,7 +17,7 @@ export class ResultController {
 
   static async getUserResult(req, res, next) {
     try {
-      const result = await ResultService.getUserResult(req.tenantId, req.params.id);
+      const result = await ResultService.getUserResult(req.tenantId, req.params.id, req.user.id);
       res.success(result, 200);
     } catch (err) { next(err); }
   }

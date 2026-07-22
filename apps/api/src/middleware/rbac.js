@@ -9,17 +9,14 @@ export function authorize(...allowedRoles) {
       return next(new ForbiddenError('Authentication required'));
     }
 
-    const userLevel = ROLE_HIERARCHY[userRole];
-    if (userLevel === undefined) {
+    if (ROLE_HIERARCHY[userRole] === undefined) {
       return next(new ForbiddenError('Invalid role'));
     }
 
-    const hasAccess = allowedRoles.some((role) => {
-      const allowedLevel = ROLE_HIERARCHY[role];
-      return allowedLevel !== undefined && userLevel >= allowedLevel;
-    });
-
-    if (!hasAccess) {
+    // Exact-match authorization — a role only passes a gate that names it.
+    // Do NOT grant access by hierarchy level, or higher roles could reach
+    // student-only endpoints (e.g. taking/submitting an exam).
+    if (!allowedRoles.includes(userRole)) {
       return next(new ForbiddenError('Insufficient permissions'));
     }
 

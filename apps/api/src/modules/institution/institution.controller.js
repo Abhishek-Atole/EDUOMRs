@@ -13,7 +13,7 @@ export class InstitutionController {
 
   static async getById(req, res, next) {
     try {
-      const institution = await InstitutionService.getById(req.params.id);
+      const institution = await InstitutionService.getById(req.params.id, req.user);
       return successResponse(req, res, institution);
     } catch (err) {
       next(err);

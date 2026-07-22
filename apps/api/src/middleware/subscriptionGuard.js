@@ -35,9 +35,9 @@ export function subscriptionGuard(req, _res, next) {
       }
 
       next();
-    } catch (err) {
-      console.error('Subscription guard error:', err.message);
-      next();
+    } catch {
+      // Fail closed: infrastructure errors must not silently grant access.
+      next(new ForbiddenError('Subscription check failed'));
     }
   })();
 }

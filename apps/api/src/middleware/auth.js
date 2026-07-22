@@ -12,7 +12,7 @@ export function authenticate(req, _res, next) {
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, env.JWT_SECRET);
+    const decoded = jwt.verify(token, env.JWT_SECRET, { algorithms: ['HS256'], issuer: env.JWT_ISSUER });
     req.user = {
       id: decoded.sub,
       role: decoded.role,

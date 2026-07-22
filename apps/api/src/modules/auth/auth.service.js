@@ -23,6 +23,7 @@ export class AuthService {
       },
       env.JWT_SECRET,
       {
+        algorithm: 'HS256',
         expiresIn: `${env.JWT_ACCESS_EXPIRY_SECONDS}s`,
         issuer: env.JWT_ISSUER,
       }

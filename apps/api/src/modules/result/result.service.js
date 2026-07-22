@@ -32,9 +32,12 @@ export class ResultService {
     return result;
   }
 
-  static async getUserResult(tenantId, resultId) {
+  static async getUserResult(tenantId, resultId, studentId) {
     const result = await ResultRepository.findById(tenantId, resultId);
     if (!result) throw new NotFoundError('Result not found');
+    // A student may only read their own result, and only once released (EI-4).
+    if (result.studentId !== studentId) throw new NotFoundError('Result not found');
+    if (!result.isReleased) throw new ForbiddenError('Result has not been released yet');
     return result;
   }
 
