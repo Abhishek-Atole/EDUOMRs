@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { examAPI } from '../../services/api.js';
 import { useAuthStore } from '../../store/authStore.js';
+import { useAutoSave } from '../../hooks/useAutoSave.js';
 import QuestionPanel from '../../components/exam/QuestionPanel.jsx';
 import OmrSheet from '../../components/exam/OmrSheet.jsx';
 import ExamTimer from '../../components/exam/ExamTimer.jsx';
@@ -53,28 +54,41 @@ export default function ExamMode1() {
   }, [examId]);
 
   const handleAnswer = useCallback((qIndex, option) => {
-    setAnswers((prev) => ({ ...prev, [qIndex]: prev[qIndex] === option ? undefined : option }));
-  }, []);
+    const q = questions[qIndex];
+    if (!q) return;
+    setAnswers((prev) => ({ ...prev, [q.id]: prev[q.id] === option ? undefined : option }));
+  }, [questions]);
 
   const handleQuestionNav = useCallback((index, option) => {
     if (option) handleAnswer(index, option);
     setCurrentIndex(index);
   }, [handleAnswer]);
 
+  // OMR/QuestionPanel expect answers keyed by index — build an index-keyed view.
+  const indexedAnswers = questions.reduce((acc, q, i) => {
+    if (answers[q.id] !== undefined) acc[i] = answers[q.id];
+    return acc;
+  }, {});
+
+  useAutoSave(session?.id, answers);
+
   const answeredCount = Object.keys(answers).filter((k) => answers[k] !== undefined).length;
   const skippedCount = questions.length - answeredCount;
 
-  const handleSubmit = async () => {
-    if (!window.confirm('Are you sure you want to submit? This action cannot be undone.')) return;
+  const submittedRef = useRef(false);
+  const handleSubmit = async (silent = false) => {
+    if (submittedRef.current) return;
+    if (!silent && !window.confirm('Are you sure you want to submit? This action cannot be undone.')) return;
+    submittedRef.current = true;
     setSubmitting(true);
     try {
-      const answerArray = questions.map((q, i) => ({
+      const answerArray = questions.map((q) => ({
         questionId: q.id,
-        selectedOption: answers[i] || null,
+        selectedOption: answers[q.id] || null,
       }));
       await examAPI.submitExam(examId, { answers: answerArray });
       toast({ title: 'Submitted', description: 'Your exam has been submitted successfully', variant: 'success' });
-      navigate('/results', { replace: true });
+      navigate(`/results/exam/${examId}`, { replace: true });
     } catch (err) {
       toast({ title: 'Error', description: err.response?.data?.error?.message || 'Submission failed', variant: 'danger' });
     } finally {
@@ -111,7 +125,7 @@ export default function ExamMode1() {
           <p className="text-sm text-surface-500">{questions.length} Questions</p>
         </div>
         <div className="flex items-center gap-3">
-          <ExamTimer examId={examId} durationMinutes={exam?.durationMinutes || 60} onExpired={handleSubmit} />
+          <ExamTimer examId={examId} durationMinutes={exam?.durationMinutes || 60} deadlineAt={session?.deadlineAt} onExpired={() => handleSubmit(true)} />
           <Button variant="ghost" size="sm" onClick={() => setShowOmr(!showOmr)} className="hidden md:flex gap-1.5">
             {showOmr ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             {showOmr ? 'Hide OMR' : 'Show OMR'}
@@ -128,13 +142,13 @@ export default function ExamMode1() {
             questions={questions}
             currentIndex={currentIndex}
             onNavigate={handleQuestionNav}
-            answers={answers}
+            answers={indexedAnswers}
           />
           <div className="md:hidden">
             <QuestionNavigator
               totalQuestions={questions.length}
               currentIndex={currentIndex}
-              answers={answers}
+              answers={indexedAnswers}
               onSelect={setCurrentIndex}
             />
           </div>
@@ -143,7 +157,7 @@ export default function ExamMode1() {
         <div className={`w-80 shrink-0 space-y-4 ${showOmr ? 'block' : 'hidden'} lg:block`}>
           <OmrSheet
             totalQuestions={questions.length}
-            answers={answers}
+            answers={indexedAnswers}
             onAnswer={handleAnswer}
             answeredCount={answeredCount}
             skippedCount={skippedCount}
@@ -152,14 +166,14 @@ export default function ExamMode1() {
             <QuestionNavigator
               totalQuestions={questions.length}
               currentIndex={currentIndex}
-              answers={answers}
+              answers={indexedAnswers}
               onSelect={setCurrentIndex}
             />
           </div>
           <Button
             className="w-full gap-2"
             size="lg"
-            onClick={handleSubmit}
+            onClick={() => handleSubmit(false)}
             disabled={submitting}
           >
             {submitting ? (
@@ -173,7 +187,7 @@ export default function ExamMode1() {
 
       {!showOmr && (
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-surface-200 p-4 flex gap-3 lg:hidden">
-          <Button className="flex-1" onClick={handleSubmit} disabled={submitting}>
+          <Button className="flex-1" onClick={() => handleSubmit(false)} disabled={submitting}>
             <Send className="w-4 h-4 mr-1.5" /> Submit
           </Button>
         </div>

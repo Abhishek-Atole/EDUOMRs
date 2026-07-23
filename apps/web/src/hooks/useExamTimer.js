@@ -1,25 +1,33 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api.js';
 
-export function useExamTimer(examId, durationMinutes) {
-  const [timeLeft, setTimeLeft] = useState(durationMinutes * 60);
-  const [isExpired, setIsExpired] = useState(false);
+// deadlineAt (ISO string from server) is the authoritative deadline.
+// durationMinutes is a fallback used only when deadlineAt is absent.
+export function useExamTimer(examId, durationMinutes, deadlineAt) {
+  const computeDeadlineMs = () => {
+    if (deadlineAt) return new Date(deadlineAt).getTime();
+    if (durationMinutes > 0) return Date.now() + durationMinutes * 60 * 1000;
+    return null;
+  };
+
+  const [deadlineMs] = useState(computeDeadlineMs);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    if (!deadlineMs) return 0;
+    return Math.max(0, Math.floor((deadlineMs - Date.now()) / 1000));
+  });
+  const [isExpired, setIsExpired] = useState(() => !deadlineMs || Date.now() >= deadlineMs);
 
   useEffect(() => {
-    if (!durationMinutes || durationMinutes <= 0) return;
-    const deadline = Date.now() + durationMinutes * 60 * 1000;
-
+    if (!deadlineMs) return;
     const interval = setInterval(() => {
-      const remaining = Math.max(0, Math.floor((deadline - Date.now()) / 1000));
+      const remaining = Math.max(0, Math.floor((deadlineMs - Date.now()) / 1000));
       setTimeLeft(remaining);
       if (remaining <= 0) {
         clearInterval(interval);
         setIsExpired(true);
       }
     }, 1000);
-
     return () => clearInterval(interval);
-  }, [durationMinutes]);
+  }, [deadlineMs]);
 
   const formatTime = useCallback(() => {
     const m = Math.floor(timeLeft / 60);

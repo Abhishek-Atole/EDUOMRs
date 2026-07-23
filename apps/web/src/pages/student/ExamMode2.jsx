@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { examAPI } from '../../services/api.js';
 import OmrSheet from '../../components/exam/OmrSheet.jsx';
@@ -13,6 +13,7 @@ export default function ExamMode2() {
   const navigate = useNavigate();
 
   const [exam, setExam] = useState(null);
+  const [session, setSession] = useState(null);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
@@ -28,6 +29,7 @@ export default function ExamMode2() {
         setExam(examRes.data.data);
 
         const sessionRes = await examAPI.startSession(examId);
+        setSession(sessionRes.data.data);
         setTotalQuestions(sessionRes.data.data?.totalQuestions || 0);
       } catch (err) {
         setError(err.response?.data?.error?.message || 'Failed to load exam');
@@ -43,11 +45,16 @@ export default function ExamMode2() {
     setAnswers((prev) => ({ ...prev, [qIndex]: prev[qIndex] === option ? undefined : option }));
   }, []);
 
+  // Mode 2 has no client-side questionIds (server keeps questions private),
+  // so bulk-save (which validates questionId as UUID) can't be wired here yet.
   const answeredCount = Object.keys(answers).filter((k) => answers[k] !== undefined).length;
   const skippedCount = totalQuestions - answeredCount;
 
-  const handleSubmit = async () => {
-    if (!window.confirm('Are you sure you want to submit? This action cannot be undone.')) return;
+  const submittedRef = useRef(false);
+  const handleSubmit = async (silent = false) => {
+    if (submittedRef.current) return;
+    if (!silent && !window.confirm('Are you sure you want to submit? This action cannot be undone.')) return;
+    submittedRef.current = true;
     setSubmitting(true);
     try {
       const answerArray = Array.from({ length: totalQuestions }, (_, i) => ({
@@ -56,7 +63,7 @@ export default function ExamMode2() {
       }));
       await examAPI.submitExam(examId, { answers: answerArray });
       toast({ title: 'Submitted', description: 'Your exam has been submitted successfully', variant: 'success' });
-      navigate('/results', { replace: true });
+      navigate(`/results/exam/${examId}`, { replace: true });
     } catch (err) {
       toast({ title: 'Error', description: err.response?.data?.error?.message || 'Submission failed', variant: 'danger' });
     } finally {
@@ -92,7 +99,7 @@ export default function ExamMode2() {
           <p className="text-sm text-surface-500">{totalQuestions} questions</p>
         </div>
         <div className="flex items-center gap-3">
-          <ExamTimer examId={examId} durationMinutes={exam?.durationMinutes || 60} onExpired={handleSubmit} />
+          <ExamTimer examId={examId} durationMinutes={exam?.durationMinutes || 60} deadlineAt={session?.deadlineAt} onExpired={() => handleSubmit(true)} />
           <Button variant="outline" size="sm" className="gap-1.5" disabled>
             <Save className="w-4 h-4" /> Auto-saved
           </Button>
@@ -121,7 +128,7 @@ export default function ExamMode2() {
       <Button
         className="w-full gap-2"
         size="lg"
-        onClick={handleSubmit}
+        onClick={() => handleSubmit(false)}
         disabled={submitting}
       >
         {submitting ? (

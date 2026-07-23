@@ -1,6 +1,7 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore } from './store/authStore.js';
+import api from './services/api.js';
 import AuthLayout from './layouts/AuthLayout.jsx';
 import DashboardLayout from './layouts/DashboardLayout.jsx';
 import LoginPage from './pages/auth/LoginPage.jsx';
@@ -38,7 +39,7 @@ function RoleRouter() {
   switch (user.role) {
     case 'platform_owner':
     case 'super_admin':
-    case 'admin':
+    case 'institution_admin':
       return React.createElement(AdminDashboard);
     case 'teacher':
       return React.createElement(TeacherDashboard);
@@ -49,6 +50,23 @@ function RoleRouter() {
     default:
       return React.createElement(StudentDashboard);
   }
+}
+
+// Routes /exam/:examId to the correct mode component after fetching the exam.
+function ExamRouter() {
+  const { examId } = useParams();
+  const navigate = useNavigate();
+  const [mode, setMode] = React.useState(null);
+
+  React.useEffect(() => {
+    api.get(`/exams/${examId}`)
+      .then(({ data }) => setMode(data.data.examMode))
+      .catch(() => navigate('/dashboard', { replace: true }));
+  }, [examId, navigate]);
+
+  if (!mode) return null;
+  if (mode === 'DIGITAL') return React.createElement(ExamMode1);
+  return React.createElement(ExamMode2);
 }
 
 export default function App() {
@@ -85,9 +103,10 @@ export default function App() {
       React.createElement(Route, { path: "/institutions", element: React.createElement(InstitutionsPage) }),
       React.createElement(Route, { path: "/payments", element: React.createElement(PaymentsPage) }),
       React.createElement(Route, { path: "/plans", element: React.createElement(PlansPage) }),
+      React.createElement(Route, { path: "/exam/:examId", element: React.createElement(ExamRouter) }),
       React.createElement(Route, { path: "/results", element: React.createElement(Navigate, { to: "/dashboard", replace: true }) })
     ),
-    React.createElement(Route, { path: "/results/:submissionId", element: React.createElement(ProtectedRoute, null, React.createElement(ResultView)) }),
+    React.createElement(Route, { path: "/results/exam/:examId", element: React.createElement(ProtectedRoute, null, React.createElement(ResultView)) }),
     React.createElement(Route, { path: "/leaderboard/:examId", element: React.createElement(ProtectedRoute, null, React.createElement(LeaderboardPage)) }),
     React.createElement(Route, { path: "/", element: React.createElement(Navigate, { to: "/dashboard", replace: true }) }),
     React.createElement(Route, { path: "*", element: React.createElement(NotFoundPage) })

@@ -79,11 +79,11 @@ export default function ResultBreakdown({ result }) {
                 q.isCorrect === false ? 'bg-red-50 border-red-200' :
                 'bg-surface-50 border-surface-200'
               }`}>
-                <span className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                   q.isCorrect === true ? 'bg-green-500 text-white' :
                   q.isCorrect === false ? 'bg-red-500 text-white' :
                   'bg-surface-300 text-surface-600'
-                }">
+                }`}>
                   {i + 1}
                 </span>
                 <div className="flex-1 min-w-0">

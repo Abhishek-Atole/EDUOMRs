@@ -1,11 +1,15 @@
+import { useEffect } from 'react';
 import { useExamTimer } from '../../hooks/useExamTimer.js';
 import { Clock, AlertTriangle } from 'lucide-react';
 
-export default function ExamTimer({ examId, durationMinutes, onExpired }) {
-  const { timeLeft, isExpired, formatTime } = useExamTimer(examId, durationMinutes);
+export default function ExamTimer({ examId, durationMinutes, deadlineAt, onExpired }) {
+  const { timeLeft, isExpired, formatTime } = useExamTimer(examId, durationMinutes, deadlineAt);
+
+  useEffect(() => {
+    if (isExpired) onExpired?.();
+  }, [isExpired, onExpired]);
 
   if (isExpired) {
-    onExpired?.();
     return (
       <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-2.5 animate-pulse-soft">
         <AlertTriangle className="w-4 h-4" />

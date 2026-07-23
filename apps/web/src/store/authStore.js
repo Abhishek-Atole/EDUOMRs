@@ -5,7 +5,7 @@ import api from '../services/api.js';
 export const useAuthStore = create((set) => ({
   user: null,
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
 
   login: async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
