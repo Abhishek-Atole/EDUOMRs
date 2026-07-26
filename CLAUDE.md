@@ -346,11 +346,10 @@ eduomr/
 │       │   ├── store/
 │       │   └── services/
 │       └── package.json
+├── .claude/                     ← Phase 0 AI framework docs (0.1–0.16)
 └── docs/
-    ├── phase-0-ai-framework/
     ├── phase-1-requirements/
-    ├── phase-2-architecture/
-    └── phase-3-design/
+    └── phase-2-architecture/
 ```
 
 ---
@@ -783,21 +782,21 @@ For every code module:
 ## SESSION STATE
 <!-- Update this block before every session -->
 
-Date             : 2026-07-15
+Date             : 2026-07-26
 Current Phase    : Phase 3 — Implementation
-Current Item     : Phase B — Authentication (B2 - B5)
+Current Item     : Stabilization — post-audit bug fixes complete; next: F5 PDF generation / F18 analytics UI
 
 Phase 0 Approved : 0.1 ✅  0.2 ✅  0.3 ✅  0.4 ✅  0.5 ✅  0.6 ✅  0.7 ✅  0.8 ✅  0.9 ✅  0.10 ✅  0.11 ✅  0.12 ✅  0.13 ✅  0.14 ✅  0.15 ✅  0.16 ✅
 Phase 0 Pending  : None — ALL APPROVED
 
 Phase 1 Status   : 1.1✅ 1.2✅ 1.3✅ 1.4✅ 1.5✅ 1.6✅ 1.7✅ 1.8✅ 1.9✅ 1.10✅ 1.11✅ — COMPLETE
 Phase 2 Status   : 2.1 HLD ✅  2.2 LLD ✅  2.3 Database Design ✅  2.4 API Design ✅  2.5 Security Architecture ✅  2.6 Deployment Architecture ✅  2.7 Testing Strategy ✅  2.8 DevOps Plan ✅ — COMPLETE
-Phase 3 Status   : Phase A Foundation ✅ — COMPLETE, Phase B Authentication ⏳ — IN PROGRESS
+Phase 3 Status   : Phases A–H substantially implemented; 7-tier audit fix pass complete (score engine, RBAC/tenancy, timer, notifications, role rename, frontend, verify) + page-wiring fix pass (commit 0eee6b5)
 
 Open Decisions:
-  - Deployment target     : TBD in Doc 2.6
-  - Self-hosted vs cloud  : TBD in Doc 1.9
-  - Free trial duration   : TBD in Doc 1.5
+  - Deployment target     : Narrowed in Doc 2.6 — managed containers + Terraform; final pick ECS vs DO App Platform pending
+  - Self-hosted vs cloud  : DECIDED in Doc 1.9 — cloud, managed PostgreSQL
+  - Free trial duration   : DECIDED in Doc 1.5 §4.3 — 14 days, 100-student cap
 
 Session Notes:
   - PROJECT_KNOWLEDGE.md updated to v2.0.0
@@ -806,3 +805,5 @@ Session Notes:
   - Auto Score locked as MVP-Critical
   - CLAUDE.md updated with LAZY SENIOR DEV (PONYTAIL RULES) coding philosophy.
   - Phase A — Foundation fully implemented, compiled, formatted, and ESLint-checked (0 errors, 0 warnings).
+  - 2026-07-26: Docs 0.1–0.4 written to .claude/ (were approved but never persisted to disk).
+  - Known deferred: Mode 2 auto-save (bulk-save schema requires UUID questionId), web ESLint 9 flat-config migration, admin CRUD pages (nav links removed until needed).
