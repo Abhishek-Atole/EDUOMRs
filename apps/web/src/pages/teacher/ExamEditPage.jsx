@@ -11,7 +11,7 @@ export default function ExamEditPage() {
   const navigate = useNavigate();
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
-  const [newQ, setNewQ] = useState({ questionText: '', options: [{ label: 'A', text: '' }, { label: 'B', text: '' }, { label: 'C', text: '' }, { label: 'D', text: '' }], marks: 1 });
+  const [newQ, setNewQ] = useState({ questionText: '', options: [{ label: 'A', text: '' }, { label: 'B', text: '' }, { label: 'C', text: '' }, { label: 'D', text: '' }], correctOption: 'A', marks: 1 });
   const [answerKeyJson, setAnswerKeyJson] = useState('');
   const [tab, setTab] = useState('questions');
   const [error, setError] = useState('');
@@ -21,12 +21,6 @@ export default function ExamEditPage() {
     api.get(`/exams/${examId}`).then(({ data }) => setExam(data.data)).catch(() => navigate('/exams'));
     api.get(`/questions/exam/${examId}`).then(({ data }) => setQuestions(data.data || [])).catch(() => {});
   }, [examId]);
-
-  const addOption = () => {
-    if (newQ.options.length >= 6) return;
-    const label = String.fromCharCode(65 + newQ.options.length);
-    setNewQ({ ...newQ, options: [...newQ.options, { label, text: '' }] });
-  };
 
   const updateOption = (idx, val) => {
     const opts = [...newQ.options];
@@ -41,10 +35,17 @@ export default function ExamEditPage() {
     }
     setError('');
     try {
-      await api.post(`/questions/exam/${examId}`, { questions: [newQ] });
+      // API stores options as {"A": "...", "B": "...", ...} (doc 2.4 §8.6)
+      const payload = {
+        questionText: newQ.questionText,
+        options: Object.fromEntries(newQ.options.map((o) => [o.label, o.text])),
+        correctOption: newQ.correctOption,
+        marks: newQ.marks,
+      };
+      await api.post(`/questions/exam/${examId}`, { questions: [payload] });
       const { data } = await api.get(`/questions/exam/${examId}`);
       setQuestions(data.data || []);
-      setNewQ({ questionText: '', options: [{ label: 'A', text: '' }, { label: 'B', text: '' }, { label: 'C', text: '' }, { label: 'D', text: '' }], marks: 1 });
+      setNewQ({ questionText: '', options: [{ label: 'A', text: '' }, { label: 'B', text: '' }, { label: 'C', text: '' }, { label: 'D', text: '' }], correctOption: 'A', marks: 1 });
       setMsg('Question added');
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to add question');
@@ -96,7 +97,7 @@ export default function ExamEditPage() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handlePublish} disabled={exam.status === 'PUBLISHED'}>Publish Exam</Button>
+          <Button onClick={handlePublish} disabled={exam.status !== 'draft'}>Publish Exam</Button>
         </div>
       </div>
       {error && <div className="mb-4 p-3 text-sm bg-red-50 text-red-600 rounded-lg">{error}</div>}
@@ -126,13 +127,18 @@ export default function ExamEditPage() {
                   <Input value={opt.text} onChange={(e) => updateOption(i, e.target.value)} placeholder={`Option ${opt.label}`} />
                 </div>
               ))}
-              {newQ.options.length < 6 && (
-                <Button variant="ghost" size="sm" onClick={addOption}><Plus className="w-3 h-3 mr-1" /> Add Option</Button>
-              )}
             </div>
-            <div className="space-y-2 w-32">
-              <Label>Marks</Label>
-              <Input type="number" min={1} value={newQ.marks} onChange={(e) => setNewQ({ ...newQ, marks: Number(e.target.value) })} />
+            <div className="flex gap-4">
+              <div className="space-y-2">
+                <Label>Correct Option</Label>
+                <select value={newQ.correctOption} onChange={(e) => setNewQ({ ...newQ, correctOption: e.target.value })} className="block rounded-lg border border-gray-300 p-2 text-sm">
+                  {['A', 'B', 'C', 'D'].map((l) => <option key={l} value={l}>{l}</option>)}
+                </select>
+              </div>
+              <div className="space-y-2 w-32">
+                <Label>Marks</Label>
+                <Input type="number" min={1} value={newQ.marks} onChange={(e) => setNewQ({ ...newQ, marks: Number(e.target.value) })} />
+              </div>
             </div>
             <Button onClick={addQuestion}><Plus className="w-4 h-4 mr-2" /> Add Question</Button>
           </div>
@@ -143,7 +149,7 @@ export default function ExamEditPage() {
                 <div className="flex-1">
                   <p className="font-medium text-sm"><span className="text-gray-400">Q{i + 1}.</span> {q.questionText}</p>
                   <div className="flex gap-3 mt-1 text-xs text-gray-500">
-                    {q.options?.map((o) => <span key={o.label}>{o.label}. {o.text}</span>)}
+                    {Object.entries(q.options || {}).map(([label, text]) => <span key={label}>{label}. {text}</span>)}
                     <span className="ml-auto font-medium">{q.marks} mark{q.marks > 1 ? 's' : ''}</span>
                   </div>
                 </div>
@@ -158,11 +164,6 @@ export default function ExamEditPage() {
         <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-100 space-y-4">
           <h3 className="font-semibold">Upload Answer Key</h3>
           <div className="space-y-2">
-            <Label>Upload CSV/Excel File</Label>
-            <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => setAnswerKeyFile(e.target.files[0])} className="block w-full text-sm" />
-          </div>
-          <div className="text-center text-gray-400 text-sm">— or —</div>
-          <div className="space-y-2">
             <Label>Paste JSON</Label>
             <textarea rows={5} value={answerKeyJson} onChange={(e) => setAnswerKeyJson(e.target.value)} placeholder='[{"questionNumber": 1, "correctOption": "A"}, ...]' className="w-full rounded-lg border border-gray-300 p-2 text-sm font-mono" />
           </div>
@@ -176,8 +177,8 @@ export default function ExamEditPage() {
           {exam.examMode === 'PHYSICAL_PAPER' ? (
             <div>
               <p className="text-sm text-gray-500">This is a Physical Paper exam. Students will see only the OMR grid on their screen.</p>
-              {exam.status === 'PUBLISHED' && (
-                <Button variant="outline" className="mt-4" onClick={() => window.open(`/api/exams/${exam.id}/print`, '_blank')}>
+              {exam.status !== 'draft' && (
+                <Button variant="outline" className="mt-4" onClick={() => window.open(`/api/v1/exams/${exam.id}/pdf`, '_blank')}>
                   <Printer className="w-4 h-4 mr-2" /> Download Question Paper PDF
                 </Button>
               )}
