@@ -11,10 +11,10 @@ export default function ExamMonitorPage() {
   const [sessions, setSessions] = useState([]);
 
   const load = () => {
-    api.get(`/exam-sessions/${examId}/monitor`).then(({ data }) => {
-      setExam(data.data.exam);
-      setSessions(data.data.sessions || []);
-    }).catch(() => navigate('/exams'));
+    api.get(`/exams/${examId}`).then(({ data }) => setExam(data.data)).catch(() => navigate('/exams'));
+    api.get(`/exam-sessions/${examId}/active`).then(({ data }) => {
+      setSessions(data.data || []);
+    }).catch(() => {});
   };
 
   useEffect(() => { load(); }, [examId]);

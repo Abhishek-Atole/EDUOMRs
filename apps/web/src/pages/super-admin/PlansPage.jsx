@@ -10,13 +10,17 @@ export default function PlansPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState({ name: '', price: 0, durationDays: 365, maxStudents: 500, maxTeachers: 20, features: '' });
   const [editingId, setEditingId] = useState(null);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/subscriptions/plans').then(({ data }) => setPlans(data.data || [])).catch(() => {});
+    api.get('/subscriptions/plans')
+      .then(({ data }) => setPlans(data.data || []))
+      .catch((err) => setError(err.response?.data?.error?.message || 'Could not load plans'));
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     const payload = { ...form, features: form.features.split('\n').filter(Boolean) };
     try {
       if (editingId) {
@@ -29,7 +33,9 @@ export default function PlansPage() {
       setShowForm(false);
       setEditingId(null);
       setForm({ name: '', price: 0, durationDays: 365, maxStudents: 500, maxTeachers: 20, features: '' });
-    } catch {}
+    } catch (err) {
+      setError(err.response?.data?.error?.message || 'Could not save plan');
+    }
   };
 
   const edit = (plan) => {
@@ -78,7 +84,9 @@ export default function PlansPage() {
           <Button type="submit">{editingId ? 'Update' : 'Create'} Plan</Button>
         </form>
       )}
+      {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{error}</p>}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {plans.length === 0 && !error && <p className="text-gray-400 text-center py-8 md:col-span-3">No plans created yet</p>}
         {plans.map((plan) => (
           <div key={plan.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
             <div className="flex items-center justify-between mb-3">

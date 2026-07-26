@@ -24,6 +24,15 @@ export class ResultRepository {
     return { data, total };
   }
 
+  static async findReleasedByStudent(tenantId, studentId) {
+    const prisma = getPrisma();
+    return prisma.result.findMany({
+      where: { tenantId, studentId, isReleased: true },
+      orderBy: { releasedAt: 'desc' },
+      include: { exam: { select: { id: true, title: true, totalMarks: true } } },
+    });
+  }
+
   static async findById(tenantId, id) {
     const prisma = getPrisma();
     return prisma.result.findFirst({

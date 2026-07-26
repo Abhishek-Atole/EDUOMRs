@@ -39,6 +39,21 @@ const mockPrisma = {
     findFirst: jest.fn(),
     create: jest.fn(),
   },
+  exam: {
+    findMany: jest.fn(),
+    findFirst: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    count: jest.fn(),
+  },
+  parentStudent: {
+    findFirst: jest.fn(),
+    findMany: jest.fn(),
+  },
+  result: {
+    findMany: jest.fn(),
+    findFirst: jest.fn(),
+  },
 };
 
 const mockModule = {

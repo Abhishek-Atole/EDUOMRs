@@ -200,7 +200,7 @@ async function main() {
     data: {
       tenantId: alpha.id, title: 'Physics Basics', description: 'Fundamentals of physics — motion, force, and energy.',
       examMode: 'DIGITAL', totalMarks: 20, marksPerCorrect: 5, marksPerWrong: 0, negativeMarking: false,
-      durationMinutes: 30, status: 'PUBLISHED', classId: aClass12.id, subjectId: physics.id, createdBy: aTeacher2.id,
+      durationMinutes: 30, status: 'published', classId: aClass12.id, subjectId: physics.id, createdBy: aTeacher2.id,
     },
   });
 
@@ -220,7 +220,7 @@ async function main() {
     data: {
       tenantId: alpha.id, title: 'English Grammar Test', description: 'Fill bubbles on screen based on printed question paper.',
       examMode: 'PHYSICAL_PAPER', totalMarks: 20, marksPerCorrect: 5, marksPerWrong: -1.25, negativeMarking: true,
-      durationMinutes: 30, status: 'PUBLISHED', classId: aClass10.id, subjectId: english.id, createdBy: aTeacher.id,
+      durationMinutes: 30, status: 'published', classId: aClass10.id, subjectId: english.id, createdBy: aTeacher.id,
     },
   });
 
@@ -249,7 +249,7 @@ async function main() {
     data: {
       tenantId: beta.id, title: 'Science Quiz', description: 'General science quiz for Class 9.',
       examMode: 'DIGITAL', totalMarks: 10, marksPerCorrect: 2, marksPerWrong: 0, negativeMarking: false,
-      durationMinutes: 15, status: 'PUBLISHED', classId: bClass.id, subjectId: bScience.id, createdBy: bTeacher.id,
+      durationMinutes: 15, status: 'published', classId: bClass.id, subjectId: bScience.id, createdBy: bTeacher.id,
     },
   });
 

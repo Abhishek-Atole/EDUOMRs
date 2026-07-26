@@ -45,7 +45,12 @@ export class ParentService {
     await ParentRepository.softDelete(tenantId, id);
   }
 
-  static async getChildren(tenantId, parentId) {
+  static async getChildren(tenantId, parentId, requestingUser) {
+    // A parent may only read their own children; tenant admins may read any.
+    if (requestingUser?.role === 'parent' && requestingUser.id !== parentId) {
+      throw new NotFoundError('Parent not found');
+    }
+
     const parent = await ParentRepository.findById(tenantId, parentId);
     if (!parent) throw new NotFoundError('Parent not found');
 

@@ -1,14 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api.js';
+import { useAuthStore } from '../../store/authStore.js';
 import { Button } from '../../components/ui/button.jsx';
 
 export default function ParentDashboard() {
+  const user = useAuthStore((s) => s.user);
   const [children, setChildren] = useState([]);
 
   useEffect(() => {
-    api.get('/parents/children').then(({ data }) => setChildren(data.data || [])).catch(() => {});
-  }, []);
+    if (!user?.id) return;
+    api.get(`/parents/${user.id}/children`).then(({ data }) => setChildren(data.data || [])).catch(() => {});
+  }, [user?.id]);
 
   return (
     <div>

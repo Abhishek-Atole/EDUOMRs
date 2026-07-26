@@ -41,6 +41,19 @@ export class ResultService {
     return result;
   }
 
+  static async getChildResults(tenantId, studentId, parentId) {
+    const prisma = getPrisma();
+    // A parent may only read results for a student they are linked to (EI-4).
+    const link = await prisma.parentStudent.findFirst({
+      where: { tenantId, parentId, studentId },
+      include: { student: { select: { id: true, firstName: true, lastName: true, email: true } } },
+    });
+    if (!link) throw new NotFoundError('Student not found');
+
+    const results = await ResultRepository.findReleasedByStudent(tenantId, studentId);
+    return { student: link.student, results };
+  }
+
   static async list(tenantId, examId, page = 1, limit = 10) {
     const skip = (page - 1) * limit;
     return ResultRepository.findByExam(tenantId, examId, page, limit, skip);

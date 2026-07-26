@@ -24,7 +24,7 @@ export default function ChildResultsPage() {
           <div key={r.id} className="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
             <div className="flex items-start justify-between">
               <div>
-                <h3 className="font-semibold">{r.examTitle}</h3>
+                <h3 className="font-semibold">{r.exam?.title}</h3>
                 <div className="flex gap-4 mt-2 text-sm">
                   <span className="font-bold text-gray-800">{r.totalScore} / {r.totalMarks}</span>
                   <span className="text-gray-500">{r.percentage}%</span>

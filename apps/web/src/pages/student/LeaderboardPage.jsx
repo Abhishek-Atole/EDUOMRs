@@ -8,7 +8,7 @@ export default function LeaderboardPage() {
   const [leaders, setLeaders] = useState([]);
 
   useEffect(() => {
-    api.get(`/results/${examId}/leaderboard?limit=10`).then(({ data }) => setLeaders(data.data || [])).catch(() => {});
+    api.get(`/results/exam/${examId}/leaderboard?limit=10`).then(({ data }) => setLeaders(data.data || [])).catch(() => {});
   }, [examId]);
 
   return (

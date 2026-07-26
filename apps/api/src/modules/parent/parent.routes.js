@@ -15,7 +15,7 @@ router.post('/', authenticate, tenantGuard, authorize(...TENANT_ADMINS), validat
 router.patch('/:id', authenticate, tenantGuard, authorize(...TENANT_ADMINS), validate(updateParentSchema), ParentController.update);
 router.delete('/:id', authenticate, tenantGuard, authorize(...TENANT_ADMINS), ParentController.delete);
 
-router.get('/:id/children', authenticate, tenantGuard, authorize(...TENANT_ADMINS), ParentController.getChildren);
+router.get('/:id/children', authenticate, tenantGuard, authorize(...TENANT_ADMINS, 'parent'), ParentController.getChildren);
 router.post('/:id/children', authenticate, tenantGuard, authorize(...TENANT_ADMINS), validate(linkStudentSchema), ParentController.linkStudent);
 router.delete('/:id/children/:studentId', authenticate, tenantGuard, authorize(...TENANT_ADMINS), ParentController.unlinkStudent);
 

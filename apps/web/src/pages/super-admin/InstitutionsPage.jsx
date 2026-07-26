@@ -5,9 +5,12 @@ import { CheckCircle, XCircle } from 'lucide-react';
 
 export default function InstitutionsPage() {
   const [institutions, setInstitutions] = useState([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    api.get('/institutions').then(({ data }) => setInstitutions(data.data || [])).catch(() => {});
+    api.get('/institutions')
+      .then(({ data }) => setInstitutions(data.data || []))
+      .catch((err) => setError(err.response?.data?.error?.message || 'Could not load institutions'));
   }, []);
 
   const toggleStatus = async (id, currentStatus) => {
@@ -23,6 +26,7 @@ export default function InstitutionsPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-gray-900 mb-6">Institutions</h1>
+      {error && <p className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg p-3">{error}</p>}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b">
@@ -35,6 +39,9 @@ export default function InstitutionsPage() {
             </tr>
           </thead>
           <tbody>
+            {institutions.length === 0 && (
+              <tr><td colSpan={5} className="p-8 text-center text-gray-400">No institutions yet</td></tr>
+            )}
             {institutions.map((inst) => (
               <tr key={inst.id} className="border-b hover:bg-gray-50">
                 <td className="p-3 font-medium">{inst.name}</td>

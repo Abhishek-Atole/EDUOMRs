@@ -15,7 +15,7 @@ export default function ExamResultsPage() {
 
   useEffect(() => {
     api.get(`/exams/${examId}`).then(({ data }) => setExam(data.data)).catch(() => navigate('/exams'));
-    api.get(`/results/${examId}/all`).then(({ data }) => setResults(data.data || [])).catch(() => {});
+    api.get(`/results/exam/${examId}`).then(({ data }) => setResults(data.data || [])).catch(() => {});
   }, [examId]);
 
   const handleRelease = async () => {
@@ -23,9 +23,9 @@ export default function ExamResultsPage() {
     setError('');
     setMsg('');
     try {
-      await api.post(`/results/${examId}/release`);
+      await api.post(`/results/exam/${examId}/release`);
       setMsg('Results released! Notifications queued.');
-      const { data } = await api.get(`/results/${examId}/all`);
+      const { data } = await api.get(`/results/exam/${examId}`);
       setResults(data.data || []);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Release failed');

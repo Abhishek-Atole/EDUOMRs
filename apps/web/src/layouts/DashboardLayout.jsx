@@ -38,14 +38,8 @@ const navItems = {
     { label: 'Payments', path: '/payments' },
     { label: 'Plans', path: '/plans' },
   ],
-  admin: [
+  institution_admin: [
     { label: 'Dashboard', path: '/dashboard' },
-    { label: 'Teachers', path: '/teachers' },
-    { label: 'Students', path: '/students' },
-    { label: 'Parents', path: '/parents' },
-    { label: 'Classes', path: '/academic/classes' },
-    { label: 'Subjects', path: '/academic/subjects' },
-    { label: 'Subscription', path: '/subscription' },
   ],
   teacher: [
     { label: 'Dashboard', path: '/dashboard' },
@@ -54,7 +48,6 @@ const navItems = {
   student: [
     { label: 'Dashboard', path: '/dashboard' },
     { label: 'My Exams', path: '/exams' },
-    { label: 'Results', path: '/results' },
   ],
   parent: [
     { label: 'Dashboard', path: '/dashboard' },

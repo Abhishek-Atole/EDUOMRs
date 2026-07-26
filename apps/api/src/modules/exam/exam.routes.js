@@ -10,8 +10,8 @@ import { createExamSchema, updateExamSchema, publishExamSchema } from './exam.va
 
 const router = Router();
 
-router.get('/', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), ExamController.list);
-router.get('/:id', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), ExamController.getById);
+router.get('/', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS, 'student'), ExamController.list);
+router.get('/:id', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS, 'student'), ExamController.getById);
 router.post('/', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), validate(createExamSchema), ExamController.create);
 router.patch('/:id', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), validate(updateExamSchema), ExamController.update);
 router.delete('/:id', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), ExamController.delete);

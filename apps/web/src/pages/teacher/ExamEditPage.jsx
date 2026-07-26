@@ -12,7 +12,6 @@ export default function ExamEditPage() {
   const [exam, setExam] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [newQ, setNewQ] = useState({ questionText: '', options: [{ label: 'A', text: '' }, { label: 'B', text: '' }, { label: 'C', text: '' }, { label: 'D', text: '' }], marks: 1 });
-  const [answerKeyFile, setAnswerKeyFile] = useState(null);
   const [answerKeyJson, setAnswerKeyJson] = useState('');
   const [tab, setTab] = useState('questions');
   const [error, setError] = useState('');
@@ -72,19 +71,13 @@ export default function ExamEditPage() {
   const handleAnswerKeyUpload = async () => {
     setError('');
     setMsg('');
+    if (!answerKeyJson.trim()) {
+      setError('Paste the answer key JSON');
+      return;
+    }
     try {
-      if (answerKeyFile) {
-        const formData = new FormData();
-        formData.append('file', answerKeyFile);
-        await api.post(`/answer-keys/${examId}/upload`, formData);
-      } else if (answerKeyJson.trim()) {
-        await api.post(`/answer-keys/${examId}/upload`, { answers: JSON.parse(answerKeyJson) });
-      } else {
-        setError('Select a file or paste JSON');
-        return;
-      }
+      await api.put(`/answer-keys/exam/${examId}`, { entries: JSON.parse(answerKeyJson) });
       setMsg('Answer key uploaded');
-      setAnswerKeyFile(null);
       setAnswerKeyJson('');
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Upload failed');

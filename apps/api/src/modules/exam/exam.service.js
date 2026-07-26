@@ -4,13 +4,18 @@ import { NotFoundError, ValidationError } from '../../types/errors.js';
 import { scheduleAutoSubmit } from '../../jobs/auto-submit.worker.js';
 
 export class ExamService {
-  static async list(tenantId, page = 1, limit = 10) {
+  static async list(tenantId, page = 1, limit = 10, user) {
     const skip = (page - 1) * limit;
+    if (user?.role === 'student') {
+      return ExamRepository.findAllForStudent(tenantId, user.id, page, limit, skip);
+    }
     return ExamRepository.findAll(tenantId, page, limit, skip);
   }
 
-  static async getById(tenantId, id) {
-    const exam = await ExamRepository.findById(tenantId, id);
+  static async getById(tenantId, id, user) {
+    const exam = user?.role === 'student'
+      ? await ExamRepository.findByIdForStudent(tenantId, user.id, id)
+      : await ExamRepository.findById(tenantId, id);
     if (!exam) throw new NotFoundError('Exam not found');
     return exam;
   }

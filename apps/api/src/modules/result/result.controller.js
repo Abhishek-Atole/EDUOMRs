@@ -22,6 +22,13 @@ export class ResultController {
     } catch (err) { next(err); }
   }
 
+  static async getChildResults(req, res, next) {
+    try {
+      const result = await ResultService.getChildResults(req.tenantId, req.params.studentId, req.user.id);
+      res.success(result, 200);
+    } catch (err) { next(err); }
+  }
+
   static async list(req, res, next) {
     try {
       const { page, limit } = req.query;

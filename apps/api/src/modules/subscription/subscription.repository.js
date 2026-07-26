@@ -37,7 +37,7 @@ export class SubscriptionRepository {
     const prisma = getPrisma();
     const where = { tenantId };
     const [data, total] = await Promise.all([
-      prisma.paymentUpload.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit }),
+      prisma.paymentUpload.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take: limit, include: { tenant: { select: { name: true } }, plan: { select: { name: true } } } }),
       prisma.paymentUpload.count({ where }),
     ]);
     return { data, total };
@@ -50,7 +50,7 @@ export class SubscriptionRepository {
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
-        include: { tenant: { select: { name: true } } },
+        include: { tenant: { select: { name: true } }, plan: { select: { name: true } } },
       }),
       prisma.paymentUpload.count(),
     ]);

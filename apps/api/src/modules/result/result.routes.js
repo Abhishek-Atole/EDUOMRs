@@ -14,6 +14,7 @@ router.get('/exam/:examId/my', authenticate, tenantGuard, subscriptionGuard, aut
 router.get('/exam/:examId', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), ResultController.list);
 router.get('/exam/:examId/leaderboard', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), ResultController.leaderboard);
 router.get('/exam/:examId/analytics', authenticate, tenantGuard, subscriptionGuard, authorize(...EXAM_MANAGERS), ResultController.analytics);
+router.get('/student/:studentId', authenticate, tenantGuard, subscriptionGuard, authorize('parent'), ResultController.getChildResults);
 router.get('/:id', authenticate, tenantGuard, subscriptionGuard, authorize('student'), ResultController.getUserResult);
 
 export const resultRoutes = router;

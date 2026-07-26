@@ -39,7 +39,7 @@ export class ParentController {
 
   static async getChildren(req, res, next) {
     try {
-      const children = await ParentService.getChildren(req.tenantId, req.params.id);
+      const children = await ParentService.getChildren(req.tenantId, req.params.id, req.user);
       res.success(children, 200);
     } catch (err) { next(err); }
   }

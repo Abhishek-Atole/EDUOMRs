@@ -5,13 +5,13 @@ export class ExamController {
   static async list(req, res, next) {
     try {
       const { page, limit } = req.query;
-      const r = await ExamService.list(req.tenantId, Number(page) || 1, Number(limit) || 10);
+      const r = await ExamService.list(req.tenantId, Number(page) || 1, Number(limit) || 10, req.user);
       res.status(200).json(res.paginated(r.data, r.total, Number(page) || 1, Number(limit) || 10));
     } catch (err) { next(err); }
   }
 
   static async getById(req, res, next) {
-    try { res.success(await ExamService.getById(req.tenantId, req.params.id), 200); }
+    try { res.success(await ExamService.getById(req.tenantId, req.params.id, req.user), 200); }
     catch (err) { next(err); }
   }
 
