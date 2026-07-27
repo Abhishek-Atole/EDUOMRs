@@ -24,14 +24,16 @@ export class ExamSessionService {
 
     const session = await ExamSessionRepository.create(tenantId, examId, studentId);
 
+    const rawQuestions = await prisma.question.findMany({
+      where: { examId, tenantId },
+      orderBy: { orderIndex: 'asc' },
+      select: { id: true, questionText: true, options: true, marks: true, orderIndex: true },
+    });
+    const totalQuestions = rawQuestions.length;
+    const maxOptions = rawQuestions.reduce((m, q) => Math.max(m, Object.keys(q.options || {}).length), 4);
+
     let questions = null;
     if (exam.examMode === 'DIGITAL') {
-      const prisma = getPrisma();
-      const rawQuestions = await prisma.question.findMany({
-        where: { examId, tenantId },
-        orderBy: { orderIndex: 'asc' },
-        select: { id: true, questionText: true, options: true, marks: true, orderIndex: true },
-      });
       questions = rawQuestions.map((q) => ({
         id: q.id,
         questionText: q.questionText,
@@ -40,8 +42,9 @@ export class ExamSessionService {
         orderIndex: q.orderIndex,
       }));
     }
+    // PHYSICAL_PAPER: questions stay null — never sent to the device (EI-5)
 
-    return { session, exam, questions, isNew: true };
+    return { session, exam, questions, totalQuestions, maxOptions, isNew: true };
   }
 
   static async getOmrData(tenantId, examId, studentId) {

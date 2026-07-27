@@ -4,6 +4,6 @@ import { z } from 'zod';
 export const uploadAnswerKeySchema = z.object({
   entries: z.array(z.object({
     questionNumber: z.number().int().min(1),
-    correctOption: z.enum(['A', 'B', 'C', 'D']),
+    correctOption: z.enum(['A', 'B', 'C', 'D', 'E', 'F']),
   })).min(1),
 });

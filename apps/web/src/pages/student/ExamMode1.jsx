@@ -72,6 +72,7 @@ export default function ExamMode1() {
 
   useAutoSave(session?.id, answers);
 
+  const maxOptions = questions.reduce((m, q) => Math.max(m, Object.keys(q.options || {}).length), 4);
   const answeredCount = Object.keys(answers).filter((k) => answers[k] !== undefined).length;
   const skippedCount = questions.length - answeredCount;
 
@@ -161,6 +162,7 @@ export default function ExamMode1() {
             onAnswer={handleAnswer}
             answeredCount={answeredCount}
             skippedCount={skippedCount}
+            optionLabels={Array.from({ length: maxOptions }, (_, i) => String.fromCharCode(65 + i))}
           />
           <div className="hidden lg:block">
             <QuestionNavigator

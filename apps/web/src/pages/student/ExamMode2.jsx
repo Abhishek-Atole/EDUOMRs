@@ -15,6 +15,7 @@ export default function ExamMode2() {
   const [exam, setExam] = useState(null);
   const [session, setSession] = useState(null);
   const [totalQuestions, setTotalQuestions] = useState(0);
+  const [optionCount, setOptionCount] = useState(4);
   const [answers, setAnswers] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -31,6 +32,7 @@ export default function ExamMode2() {
         const sessionRes = await examAPI.startSession(examId);
         setSession(sessionRes.data.data);
         setTotalQuestions(sessionRes.data.data?.totalQuestions || 0);
+        setOptionCount(sessionRes.data.data?.maxOptions || 4);
       } catch (err) {
         setError(err.response?.data?.error?.message || 'Failed to load exam');
         toast({ title: 'Error', description: 'Could not load exam', variant: 'danger' });
@@ -123,6 +125,7 @@ export default function ExamMode2() {
         onAnswer={handleAnswer}
         answeredCount={answeredCount}
         skippedCount={skippedCount}
+        optionLabels={Array.from({ length: optionCount }, (_, i) => String.fromCharCode(65 + i))}
       />
 
       <Button

@@ -1,8 +1,8 @@
 import { Circle, CheckCircle2 } from 'lucide-react';
 
-const OPTIONS = ['A', 'B', 'C', 'D'];
+const DEFAULT_OPTIONS = ['A', 'B', 'C', 'D'];
 
-export default function OmrSheet({ totalQuestions, answers, onAnswer, answeredCount, skippedCount }) {
+export default function OmrSheet({ totalQuestions, answers, onAnswer, answeredCount, skippedCount, optionLabels = DEFAULT_OPTIONS }) {
   const total = totalQuestions || 0;
 
   return (
@@ -33,7 +33,7 @@ export default function OmrSheet({ totalQuestions, answers, onAnswer, answeredCo
             >
               <p className="text-[10px] text-surface-400 pt-1.5 pb-0.5 font-medium">Q{(i + 1).toString().padStart(2, '0')}</p>
               <div className="flex justify-center gap-0.5 pb-1.5">
-                {OPTIONS.map((opt) => (
+                {optionLabels.map((opt) => (
                   <button
                     key={opt}
                     type="button"

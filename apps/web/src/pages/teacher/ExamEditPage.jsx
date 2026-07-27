@@ -22,6 +22,19 @@ export default function ExamEditPage() {
     api.get(`/questions/exam/${examId}`).then(({ data }) => setQuestions(data.data || [])).catch(() => {});
   }, [examId]);
 
+  const addOption = () => {
+    if (newQ.options.length >= 6) return;
+    const label = String.fromCharCode(65 + newQ.options.length);
+    setNewQ({ ...newQ, options: [...newQ.options, { label, text: '' }] });
+  };
+
+  const removeOption = () => {
+    if (newQ.options.length <= 4) return;
+    const opts = newQ.options.slice(0, -1);
+    const removed = newQ.options[newQ.options.length - 1].label;
+    setNewQ({ ...newQ, options: opts, correctOption: newQ.correctOption === removed ? 'A' : newQ.correctOption });
+  };
+
   const updateOption = (idx, val) => {
     const opts = [...newQ.options];
     opts[idx] = { ...opts[idx], text: val };
@@ -127,12 +140,20 @@ export default function ExamEditPage() {
                   <Input value={opt.text} onChange={(e) => updateOption(i, e.target.value)} placeholder={`Option ${opt.label}`} />
                 </div>
               ))}
+              <div className="flex gap-2">
+                {newQ.options.length < 6 && (
+                  <Button variant="ghost" size="sm" onClick={addOption}><Plus className="w-3 h-3 mr-1" /> Add Option</Button>
+                )}
+                {newQ.options.length > 4 && (
+                  <Button variant="ghost" size="sm" className="text-red-500" onClick={removeOption}><Trash2 className="w-3 h-3 mr-1" /> Remove Option</Button>
+                )}
+              </div>
             </div>
             <div className="flex gap-4">
               <div className="space-y-2">
                 <Label>Correct Option</Label>
                 <select value={newQ.correctOption} onChange={(e) => setNewQ({ ...newQ, correctOption: e.target.value })} className="block rounded-lg border border-gray-300 p-2 text-sm">
-                  {['A', 'B', 'C', 'D'].map((l) => <option key={l} value={l}>{l}</option>)}
+                  {newQ.options.map((o) => <option key={o.label} value={o.label}>{o.label}</option>)}
                 </select>
               </div>
               <div className="space-y-2 w-32">
