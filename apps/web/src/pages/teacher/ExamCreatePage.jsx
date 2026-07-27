@@ -36,7 +36,11 @@ export default function ExamCreatePage() {
     setError('');
     setSubmitting(true);
     try {
-      const { data } = await api.post('/exams', form);
+      // Zod treats '' as present-but-invalid for uuid/datetime fields — drop empties
+      const payload = Object.fromEntries(Object.entries(form).filter(([, v]) => v !== ''));
+      // datetime-local gives "YYYY-MM-DDTHH:mm"; schema wants full ISO
+      if (payload.scheduledAt) payload.scheduledAt = new Date(payload.scheduledAt).toISOString();
+      const { data } = await api.post('/exams', payload);
       navigate(`/exams/${data.data.id}/edit`);
     } catch (err) {
       setError(err.response?.data?.error?.message || 'Failed to create exam');
