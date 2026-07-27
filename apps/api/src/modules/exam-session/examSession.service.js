@@ -17,12 +17,11 @@ export class ExamSessionService {
     }
 
     const existing = await ExamSessionRepository.findByExamAndStudent(tenantId, examId, studentId);
-    if (existing) {
-      if (existing.status !== 'in_progress') throw new ForbiddenError('You have already submitted this exam');
-      return { session: existing, exam, isNew: false };
+    if (existing && existing.status !== 'in_progress') {
+      throw new ForbiddenError('You have already submitted this exam');
     }
 
-    const session = await ExamSessionRepository.create(tenantId, examId, studentId);
+    const session = existing || await ExamSessionRepository.create(tenantId, examId, studentId);
 
     const rawQuestions = await prisma.question.findMany({
       where: { examId, tenantId },
@@ -31,6 +30,8 @@ export class ExamSessionService {
     });
     const totalQuestions = rawQuestions.length;
     const maxOptions = rawQuestions.reduce((m, q) => Math.max(m, Object.keys(q.options || {}).length), 4);
+    // Counts only — reveals nothing about question content, safe for Mode 2 (EI-5)
+    const optionCounts = rawQuestions.map((q) => Object.keys(q.options || {}).length);
 
     let questions = null;
     if (exam.examMode === 'DIGITAL') {
@@ -44,7 +45,7 @@ export class ExamSessionService {
     }
     // PHYSICAL_PAPER: questions stay null — never sent to the device (EI-5)
 
-    return { session, exam, questions, totalQuestions, maxOptions, isNew: true };
+    return { session, exam, questions, totalQuestions, maxOptions, optionCounts, isNew: !existing };
   }
 
   static async getOmrData(tenantId, examId, studentId) {

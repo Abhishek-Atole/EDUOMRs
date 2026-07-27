@@ -163,6 +163,7 @@ export default function ExamMode1() {
             answeredCount={answeredCount}
             skippedCount={skippedCount}
             optionLabels={Array.from({ length: maxOptions }, (_, i) => String.fromCharCode(65 + i))}
+            optionCounts={questions.map((q) => Object.keys(q.options || {}).length)}
           />
           <div className="hidden lg:block">
             <QuestionNavigator
